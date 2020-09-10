@@ -99,7 +99,9 @@
         const trigger = (data, loading, error) => {
           if (data) {
             B.triggerEvent('onActionSuccess', data.actionb5);
-
+            // if (data.actionb5.redirectUrl){
+            //   history.push(data.actionb5.redirectUrl)
+            // }
             if (hasRedirect) {
               if (redirectTo === location.pathname) {
                 history.go(0);

@@ -31,7 +31,8 @@
     const isDev = B.env === 'dev';
     const displayError = showError === 'built-in';
 
-    const { useGetAll, getProperty, useText, getActionInput } = B;
+    const { useGetAll, getProperty, useText, getActionInput,GetOneProvider, Query, env, getModel } = B;
+    const {gql} = window;
 
     const { label: propertyLabelText } = getProperty(property) || {};
     const propLabelOverride = useText(propertyLabelOverride);
@@ -62,33 +63,37 @@
       Radio,
     } = window.MaterialUI.Core;
 
-    const { loading, error: err, data, refetch } =
-      model && useGetAll(model, { filter, skip: 0, take: 50 });
+    
+
+
+    // const { loading, error: err, data, refetch } =
+    //   model && useGetAll(model, { filter, skip: 0, take: 50 });
+
 
     const mounted = useRef(true);
-    useEffect(() => {
-      if (!mounted.current && loading) {
-        B.triggerEvent('onLoad', loading);
-      }
-      mounted.current = false;
-    }, [loading]);
+    // useEffect(() => {
+    //   if (!mounted.current && loading) {
+    //     B.triggerEvent('onLoad', loading);
+    //   }
+    //   mounted.current = false;
+    // }, [loading]);
 
-    if (err && !displayError) {
-      B.triggerEvent('onError', err.message);
-    }
+    // if (err && !displayError) {
+    //   B.triggerEvent('onError', err.message);
+    // }
 
-    const { results } = data || {};
-    if (results) {
-      if (results.length > 0) {
-        B.triggerEvent('onSuccess', results);
-      } else {
-        B.triggerEvent('onNoResults');
-      }
-    }
+    // const { results } = data || {};
+    // if (results) {
+    //   if (results.length > 0) {
+    //     B.triggerEvent('onSuccess', results);
+    //   } else {
+    //     B.triggerEvent('onNoResults');
+    //   }
+    // }
 
-    useEffect(() => {
-      B.defineFunction('Refetch', () => refetch());
-    }, [refetch]);
+    // useEffect(() => {
+    //   B.defineFunction('Refetch', () => refetch());
+    // }, [refetch]);
 
     // renders the radio component
     const renderRadio = (optionValue, optionLabel) => (
@@ -102,13 +107,13 @@
     );
     const radioData = (radioOptions || '').split('\n');
 
-    const renderRadios = () => {
+    const renderRadios = (results) => {
       if (optionType !== 'data') {
         return radioData.map(option => renderRadio(option, option));
       }
       if (isDev) return renderRadio('value', 'Placeholder');
-      if (loading) return <span>Loading...</span>;
-      if (err && displayError) return <span>{err.message}</span>;
+      // if (loading) return <span>Loading...</span>;
+      // if (err && displayError) return <span>{err.message}</span>;
       return results.map(item =>
         renderRadio(item[valueProperty.name], item[labelProperty.name]),
       );
@@ -124,7 +129,8 @@
       }
     }, [isDev, defaultValue]);
 
-    const FormControl = (
+    const FormControl = ({results}) => {
+      return(
       <MUIFormControl
         classes={{ root: classes.formControl }}
         required={required}
@@ -137,14 +143,45 @@
         <RadioGroup
           row={row}
           value={value}
-          name={actionInput && actionInput.name}
+          // name={actionInput && actionInput.name}
           onChange={handleChange}
           aria-label={labelText}
         >
-          {renderRadios()}
+          {renderRadios(results)}
         </RadioGroup>
+        <input type="hidden" name={actionInput && actionInput.name} value={value}></input>
         <FormHelperText>{componentHelperText}</FormHelperText>
-      </MUIFormControl>
+      </MUIFormControl>)
+    };
+
+    const queryKey = "allQuestionnairequestionoption"; //all<modelnaam> or one<modelnaam>
+    const select = "results{id,title}"; //properties
+    const q = "query ($skip: Int, $take: Int) {\
+      " + queryKey + "(skip: $skip, where: $where) {\
+        " + select + " \
+      }\
+    }";
+
+    const g = gql(q);
+    const where = B.useFilter(filter);
+
+    if(isDev) {
+      return <div><FormControl results={[]} /></div>;
+    }
+
+    return(
+      <div>
+        <Query query={g} variables={{where: where}}>
+          {({data, loading, error}) => {
+            if(loading || error) {
+              return <div>LOADING</div>
+            }
+            console.log(data); //See how your data looks like.
+            const {results} = data.allQuestionnairequestionoption;
+            return <div><FormControl results={results} /></div>;
+          }}
+        </Query>
+      </div>
     );
 
     return isDev ? (

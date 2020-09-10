@@ -4,12 +4,21 @@
   allowedTypes: ['BODY_COMPONENT', 'CONTAINER_COMPONENT', 'CONTENT_COMPONENT'],
   orientation: 'HORIZONTAL',
   jsx: (() => {
-    const { env } = B;
+    const { env, Link } = B;
     const { Paper } = window.MaterialUI.Core;
-    const { elevation, variant, square } = options;
+    const {
+      elevation,
+      variant,
+      square,
+      linkType,
+      linkTo,
+      linkToExternal,
+    } = options;
     const isDev = env === 'dev';
     const isEmpty = children.length === 0;
     const isPristine = isEmpty && isDev;
+    const hasLink = linkTo && linkTo.id !== '';
+    const hasExternalLink = linkToExternal && linkToExternal.id !== '';
     const PlaceHolder = (
       <div
         className={[
@@ -20,13 +29,15 @@
     );
 
     const PaperComponent = (
-      <Paper
-        variant={variant}
-        elevation={variant === 'flat' ? 0 : elevation}
-        square={square}
-      >
-        {isEmpty ? PlaceHolder : children}
-      </Paper>
+      <Link endpoint={linkTo} style={{ textDecoration: 'none' }}>
+        <Paper
+          variant={variant}
+          elevation={variant === 'flat' ? 0 : elevation}
+          square={square}
+        >
+          {isEmpty ? PlaceHolder : children}
+        </Paper>
+      </Link>
     );
     return isDev ? <div>{PaperComponent}</div> : PaperComponent;
   })(),
